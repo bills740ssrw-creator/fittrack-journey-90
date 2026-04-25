@@ -121,6 +121,56 @@ export default function Onboarding() {
 
         {step === 3 && (
           <section>
+            <h1 className="text-2xl font-bold mb-1">About your body</h1>
+            <p className="text-muted-foreground mb-5">We use this to estimate calories and tailor your report.</p>
+            <div className="ft-card space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input id="height" type="number" inputMode="decimal" min={80} max={250} value={height} onChange={(e) => setHeight(e.target.value)} placeholder="175" />
+                </div>
+                <div>
+                  <Label htmlFor="weight">Weight (kg)</Label>
+                  <Input id="weight" type="number" inputMode="decimal" min={25} max={350} step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="70" />
+                </div>
+                <div>
+                  <Label htmlFor="age">Age</Label>
+                  <Input id="age" type="number" inputMode="numeric" min={10} max={100} value={age} onChange={(e) => setAge(e.target.value)} placeholder="28" />
+                </div>
+                <div>
+                  <Label>Sex</Label>
+                  <Select value={sex} onValueChange={(v) => setSex(v as Sex)}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Activity level</Label>
+                <Select value={activity} onValueChange={(v) => setActivity(v as ActivityLevel)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
+                    <SelectItem value="light">Light (1–3 days/week)</SelectItem>
+                    <SelectItem value="moderate">Moderate (3–5 days/week)</SelectItem>
+                    <SelectItem value="very_active">Very active (6–7 days/week)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>Back</Button>
+              <Button className="flex-1" disabled={!measuresValid} onClick={() => setStep(4)}>Continue</Button>
+            </div>
+          </section>
+        )}
+
+        {step === 4 && (
+          <section>
             <h1 className="text-2xl font-bold mb-1">Preferred workout time</h1>
             <p className="text-muted-foreground mb-5">When do you usually train?</p>
             <div className="ft-card">
@@ -128,7 +178,7 @@ export default function Onboarding() {
               <Input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
             <div className="flex gap-2 mt-6">
-              <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>Back</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setStep(3)}>Back</Button>
               <Button className="flex-1" disabled={saving} onClick={finish}>{saving ? "Saving…" : "Start training"}</Button>
             </div>
           </section>
