@@ -14,7 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cardio_sessions: {
+        Row: {
+          calories: number
+          distance_km: number
+          duration_minutes: number
+          id: string
+          logged_at: string
+          notes: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          distance_km?: number
+          duration_minutes: number
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          distance_km?: number
+          duration_minutes?: number
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          goal: Database["public"]["Enums"]["fitness_goal"] | null
+          onboarded: boolean
+          reminder_time: string | null
+          updated_at: string
+          user_id: string
+          weekly_target: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          goal?: Database["public"]["Enums"]["fitness_goal"] | null
+          onboarded?: boolean
+          reminder_time?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_target?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          goal?: Database["public"]["Enums"]["fitness_goal"] | null
+          onboarded?: boolean
+          reminder_time?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_target?: number | null
+        }
+        Relationships: []
+      }
+      workout_exercises: {
+        Row: {
+          exercise_name: string
+          id: string
+          position: number
+          reps: number
+          session_id: string
+          sets: number
+          weight_kg: number
+        }
+        Insert: {
+          exercise_name: string
+          id?: string
+          position?: number
+          reps: number
+          session_id: string
+          sets: number
+          weight_kg?: number
+        }
+        Update: {
+          exercise_name?: string
+          id?: string
+          position?: number
+          reps?: number
+          session_id?: string
+          sets?: number
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_exercises_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_sessions: {
+        Row: {
+          id: string
+          logged_at: string
+          session_name: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          logged_at?: string
+          session_name: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          logged_at?: string
+          session_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +150,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      fitness_goal: "lose_weight" | "build_strength" | "stay_active"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +277,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      fitness_goal: ["lose_weight", "build_strength", "stay_active"],
+    },
   },
 } as const
