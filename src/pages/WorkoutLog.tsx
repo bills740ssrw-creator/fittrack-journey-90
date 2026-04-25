@@ -118,10 +118,41 @@ export default function WorkoutLog() {
         <div className="space-y-3">
           {exs.map((x, i) => (
             <div key={i} className="rounded-xl border border-border p-3 space-y-2 bg-background/40">
-              <div className="flex items-center gap-2">
-                <Input value={x.exercise_name} onChange={(e) => update(i, "exercise_name", e.target.value)} placeholder={`Exercise ${i + 1}`} maxLength={80} />
+              <div className="flex items-start gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={x.exercise_name}
+                    onChange={(e) => update(i, "exercise_name", e.target.value)}
+                    onFocus={() => handleFocus(i)}
+                    onBlur={handleBlur}
+                    placeholder={`Search exercise ${i + 1}…`}
+                    maxLength={80}
+                    autoComplete="off"
+                    className="pl-9"
+                  />
+                  {focusedIdx === i && (() => {
+                    const sugg = getSuggestions(x.exercise_name);
+                    if (sugg.length === 0) return null;
+                    return (
+                      <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-lg border border-border bg-popover shadow-lg">
+                        {sugg.map((s) => (
+                          <li key={s}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); update(i, "exercise_name", s); setFocusedIdx(null); }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              {s}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
                 {exs.length > 1 && (
-                  <button type="button" onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive p-2">
+                  <button type="button" onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive p-2 mt-1">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}
