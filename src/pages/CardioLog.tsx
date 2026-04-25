@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { HeartPulse, Footprints, Bike, Activity } from "lucide-react";
+import CardioTracker from "@/components/CardioTracker";
 
 type CardioType = "run" | "walk" | "cycle" | "other";
 type Row = { id: string; type: CardioType; duration_minutes: number; distance_km: number; calories: number; notes: string | null; logged_at: string };
@@ -76,9 +77,17 @@ export default function CardioLog() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-2xl font-bold">Log cardio</h1>
-        <p className="text-sm text-muted-foreground">Track your runs, rides, and walks.</p>
+        <h1 className="text-2xl font-bold">Cardio</h1>
+        <p className="text-sm text-muted-foreground">Track live with GPS, or log a past session below.</p>
       </header>
+
+      <CardioTracker onSaved={load} />
+
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Or log manually</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
 
       <form onSubmit={save} className="ft-card space-y-4">
         <div>
