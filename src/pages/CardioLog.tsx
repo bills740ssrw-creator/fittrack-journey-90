@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { HeartPulse, Footprints, Bike, Activity } from "lucide-react";
+import CardioTracker from "@/components/CardioTracker";
 
 type CardioType = "run" | "walk" | "cycle" | "other";
 type Row = { id: string; type: CardioType; duration_minutes: number; distance_km: number; calories: number; notes: string | null; logged_at: string };
