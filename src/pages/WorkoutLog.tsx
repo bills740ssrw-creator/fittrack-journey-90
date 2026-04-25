@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
+import { EXERCISE_CATALOG } from "@/lib/exerciseCatalog";
 
 type Exercise = { exercise_name: string; sets: string; reps: string; weight_kg: string };
 type SessionRow = {
@@ -20,6 +21,8 @@ export default function WorkoutLog() {
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
+  const blurTimer = useRef<number | null>(null);
 
   useEffect(() => { document.title = "Workout Log · FitTrack"; }, []);
 
