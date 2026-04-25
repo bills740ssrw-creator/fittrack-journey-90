@@ -127,6 +127,25 @@ export default function Dashboard() {
     return out.slice(0, 3);
   }, [cardio, sessions, exercises, weekStart]);
 
+  // Body report — BMI, BMR (Mifflin–St Jeor), TDEE
+  const bodyReport = useMemo(() => {
+    if (!profile?.height_cm || !profile?.weight_kg || !profile?.age || !profile?.sex) return null;
+    const h = Number(profile.height_cm);
+    const w = Number(profile.weight_kg);
+    const a = Number(profile.age);
+    const bmi = w / Math.pow(h / 100, 2);
+    let bmiCat = "Normal";
+    if (bmi < 18.5) bmiCat = "Underweight";
+    else if (bmi < 25) bmiCat = "Normal";
+    else if (bmi < 30) bmiCat = "Overweight";
+    else bmiCat = "Obese";
+    const sexOffset = profile.sex === "male" ? 5 : profile.sex === "female" ? -161 : -78;
+    const bmr = 10 * w + 6.25 * h - 5 * a + sexOffset;
+    const factor: Record<string, number> = { sedentary: 1.2, light: 1.375, moderate: 1.55, very_active: 1.725 };
+    const tdee = bmr * (factor[profile.activity_level as string] ?? 1.55);
+    return { bmi: Math.round(bmi * 10) / 10, bmiCat, bmr: Math.round(bmr), tdee: Math.round(tdee) };
+  }, [profile]);
+
   const target = profile?.weekly_target ?? 4;
 
   return (
@@ -175,6 +194,30 @@ export default function Dashboard() {
               <li key={i} className="text-sm text-foreground/90 border-l-2 border-primary pl-3">{s}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {bodyReport && (
+        <section className="ft-card">
+          <h2 className="font-semibold mb-1">Body report</h2>
+          <p className="text-xs text-muted-foreground mb-3">Based on your measurements</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <div className="ft-stat-label">BMI</div>
+              <div className="ft-stat-value">{bodyReport.bmi}</div>
+              <div className="text-xs text-primary mt-0.5">{bodyReport.bmiCat}</div>
+            </div>
+            <div>
+              <div className="ft-stat-label">BMR</div>
+              <div className="ft-stat-value">{bodyReport.bmr}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">kcal/day</div>
+            </div>
+            <div>
+              <div className="ft-stat-label">TDEE</div>
+              <div className="ft-stat-value">{bodyReport.tdee}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">kcal/day</div>
+            </div>
+          </div>
         </section>
       )}
 

@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
+import { EXERCISE_CATALOG } from "@/lib/exerciseCatalog";
 
 type Exercise = { exercise_name: string; sets: string; reps: string; weight_kg: string };
 type SessionRow = {
@@ -20,6 +21,8 @@ export default function WorkoutLog() {
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
+  const blurTimer = useRef<number | null>(null);
 
   useEffect(() => { document.title = "Workout Log · FitTrack"; }, []);
 
@@ -39,6 +42,33 @@ export default function WorkoutLog() {
   const addRow = () => setExs((e) => [...e, { exercise_name: "", sets: "", reps: "", weight_kg: "" }]);
   const removeRow = (i: number) => setExs((e) => e.filter((_, idx) => idx !== i));
   const update = (i: number, k: keyof Exercise, v: string) => setExs((e) => e.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
+
+  // Build searchable name list: catalog ∪ user history (deduped, case-insensitive)
+  const knownNames = useMemo(() => {
+    const map = new Map<string, string>();
+    EXERCISE_CATALOG.forEach((n) => map.set(n.toLowerCase(), n));
+    rows.forEach((r) => r.exercises.forEach((e) => {
+      const key = e.exercise_name.trim().toLowerCase();
+      if (key && !map.has(key)) map.set(key, e.exercise_name.trim());
+    }));
+    return [...map.values()].sort((a, b) => a.localeCompare(b));
+  }, [rows]);
+
+  const getSuggestions = (q: string) => {
+    const s = q.trim().toLowerCase();
+    if (!s) return knownNames.slice(0, 6);
+    const starts = knownNames.filter((n) => n.toLowerCase().startsWith(s));
+    const contains = knownNames.filter((n) => !n.toLowerCase().startsWith(s) && n.toLowerCase().includes(s));
+    return [...starts, ...contains].slice(0, 6);
+  };
+
+  const handleFocus = (i: number) => {
+    if (blurTimer.current) { window.clearTimeout(blurTimer.current); blurTimer.current = null; }
+    setFocusedIdx(i);
+  };
+  const handleBlur = () => {
+    blurTimer.current = window.setTimeout(() => setFocusedIdx(null), 150);
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,10 +118,41 @@ export default function WorkoutLog() {
         <div className="space-y-3">
           {exs.map((x, i) => (
             <div key={i} className="rounded-xl border border-border p-3 space-y-2 bg-background/40">
-              <div className="flex items-center gap-2">
-                <Input value={x.exercise_name} onChange={(e) => update(i, "exercise_name", e.target.value)} placeholder={`Exercise ${i + 1}`} maxLength={80} />
+              <div className="flex items-start gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={x.exercise_name}
+                    onChange={(e) => update(i, "exercise_name", e.target.value)}
+                    onFocus={() => handleFocus(i)}
+                    onBlur={handleBlur}
+                    placeholder={`Search exercise ${i + 1}…`}
+                    maxLength={80}
+                    autoComplete="off"
+                    className="pl-9"
+                  />
+                  {focusedIdx === i && (() => {
+                    const sugg = getSuggestions(x.exercise_name);
+                    if (sugg.length === 0) return null;
+                    return (
+                      <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-lg border border-border bg-popover shadow-lg">
+                        {sugg.map((s) => (
+                          <li key={s}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); update(i, "exercise_name", s); setFocusedIdx(null); }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              {s}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
                 {exs.length > 1 && (
-                  <button type="button" onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive p-2">
+                  <button type="button" onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive p-2 mt-1">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}

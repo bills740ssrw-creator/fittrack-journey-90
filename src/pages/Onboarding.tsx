@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Activity, Dumbbell, HeartPulse } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type Goal = Database["public"]["Enums"]["fitness_goal"];
+type Sex = "male" | "female" | "other";
+type ActivityLevel = "sedentary" | "light" | "moderate" | "very_active";
 
 const goals: { id: Goal; label: string; desc: string; icon: any }[] = [
   { id: "lose_weight", label: "Lose Weight", desc: "Burn calories with cardio focus", icon: HeartPulse },
@@ -24,19 +27,41 @@ export default function Onboarding() {
   const [goal, setGoal] = useState<Goal | null>(null);
   const [target, setTarget] = useState<number | null>(null);
   const [time, setTime] = useState("18:00");
+  // Body measurements
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [age, setAge] = useState("");
+  const [sex, setSex] = useState<Sex | "">("");
+  const [activity, setActivity] = useState<ActivityLevel>("moderate");
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { document.title = "Welcome · FitTrack"; }, []);
 
+  const measuresValid =
+    Number(height) >= 80 && Number(height) <= 250 &&
+    Number(weight) >= 25 && Number(weight) <= 350 &&
+    Number(age) >= 10 && Number(age) <= 100 &&
+    !!sex;
+
   const finish = async () => {
-    if (!goal || !target) return;
+    if (!goal || !target || !measuresValid) return;
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSaving(false); return; }
     const { error } = await supabase
       .from("profiles")
-      .update({ goal, weekly_target: target, reminder_time: time, onboarded: true })
+      .update({
+        goal,
+        weekly_target: target,
+        reminder_time: time,
+        onboarded: true,
+        height_cm: Number(height),
+        weight_kg: Number(weight),
+        age: Number(age),
+        sex: sex as Sex,
+        activity_level: activity,
+      })
       .eq("user_id", u.user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -49,7 +74,7 @@ export default function Onboarding() {
       <div className="flex justify-center mb-8"><Logo size="lg" /></div>
       <div className="max-w-sm w-full mx-auto flex-1">
         <div className="flex gap-1.5 mb-6">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div key={s} className={`h-1.5 flex-1 rounded-full ${s <= step ? "bg-primary" : "bg-secondary"}`} />
           ))}
         </div>
@@ -96,6 +121,56 @@ export default function Onboarding() {
 
         {step === 3 && (
           <section>
+            <h1 className="text-2xl font-bold mb-1">About your body</h1>
+            <p className="text-muted-foreground mb-5">We use this to estimate calories and tailor your report.</p>
+            <div className="ft-card space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input id="height" type="number" inputMode="decimal" min={80} max={250} value={height} onChange={(e) => setHeight(e.target.value)} placeholder="175" />
+                </div>
+                <div>
+                  <Label htmlFor="weight">Weight (kg)</Label>
+                  <Input id="weight" type="number" inputMode="decimal" min={25} max={350} step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="70" />
+                </div>
+                <div>
+                  <Label htmlFor="age">Age</Label>
+                  <Input id="age" type="number" inputMode="numeric" min={10} max={100} value={age} onChange={(e) => setAge(e.target.value)} placeholder="28" />
+                </div>
+                <div>
+                  <Label>Sex</Label>
+                  <Select value={sex} onValueChange={(v) => setSex(v as Sex)}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Activity level</Label>
+                <Select value={activity} onValueChange={(v) => setActivity(v as ActivityLevel)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
+                    <SelectItem value="light">Light (1–3 days/week)</SelectItem>
+                    <SelectItem value="moderate">Moderate (3–5 days/week)</SelectItem>
+                    <SelectItem value="very_active">Very active (6–7 days/week)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>Back</Button>
+              <Button className="flex-1" disabled={!measuresValid} onClick={() => setStep(4)}>Continue</Button>
+            </div>
+          </section>
+        )}
+
+        {step === 4 && (
+          <section>
             <h1 className="text-2xl font-bold mb-1">Preferred workout time</h1>
             <p className="text-muted-foreground mb-5">When do you usually train?</p>
             <div className="ft-card">
@@ -103,7 +178,7 @@ export default function Onboarding() {
               <Input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
             <div className="flex gap-2 mt-6">
-              <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>Back</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setStep(3)}>Back</Button>
               <Button className="flex-1" disabled={saving} onClick={finish}>{saving ? "Saving…" : "Start training"}</Button>
             </div>
           </section>
