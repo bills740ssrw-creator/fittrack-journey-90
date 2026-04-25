@@ -43,6 +43,33 @@ export default function WorkoutLog() {
   const removeRow = (i: number) => setExs((e) => e.filter((_, idx) => idx !== i));
   const update = (i: number, k: keyof Exercise, v: string) => setExs((e) => e.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
 
+  // Build searchable name list: catalog ∪ user history (deduped, case-insensitive)
+  const knownNames = useMemo(() => {
+    const map = new Map<string, string>();
+    EXERCISE_CATALOG.forEach((n) => map.set(n.toLowerCase(), n));
+    rows.forEach((r) => r.exercises.forEach((e) => {
+      const key = e.exercise_name.trim().toLowerCase();
+      if (key && !map.has(key)) map.set(key, e.exercise_name.trim());
+    }));
+    return [...map.values()].sort((a, b) => a.localeCompare(b));
+  }, [rows]);
+
+  const getSuggestions = (q: string) => {
+    const s = q.trim().toLowerCase();
+    if (!s) return knownNames.slice(0, 6);
+    const starts = knownNames.filter((n) => n.toLowerCase().startsWith(s));
+    const contains = knownNames.filter((n) => !n.toLowerCase().startsWith(s) && n.toLowerCase().includes(s));
+    return [...starts, ...contains].slice(0, 6);
+  };
+
+  const handleFocus = (i: number) => {
+    if (blurTimer.current) { window.clearTimeout(blurTimer.current); blurTimer.current = null; }
+    setFocusedIdx(i);
+  };
+  const handleBlur = () => {
+    blurTimer.current = window.setTimeout(() => setFocusedIdx(null), 150);
+  };
+
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
